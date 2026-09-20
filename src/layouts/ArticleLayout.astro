@@ -1,0 +1,63 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import type { MarkdownHeading } from 'astro';
+import BaseLayout from './BaseLayout.astro';
+import { site, formatDate } from '../data/site';
+import { series } from '../data/series';
+import { getPublishedWriting } from '../data/writing';
+
+interface Props {
+  entry: CollectionEntry<'writing'>;
+  headings: MarkdownHeading[];
+}
+
+const { entry, headings } = Astro.props;
+const { data } = entry;
+const currentSeries = series.find((item) => item.slug === data.series);
+const contents = headings.filter((heading) => heading.depth === 2);
+const nextArticle = (await getPublishedWriting()).find((post) => post.data.series === data.series && post.data.part === data.part + 1);
+const nextPlanned = currentSeries?.planned.find((part) => part.part === data.part + 1);
+---
+
+<BaseLayout title={data.title} description={data.description} image={data.heroImage} imageAlt={data.heroAlt} article publishedDate={data.pubDate}>
+  <article class="article-page shell">
+    <header class="article-header">
+      <a class="back-link" href="/writing/"><span aria-hidden="true">←</span> All writing</a>
+      {currentSeries && <a class="eyebrow series-eyebrow" href={`/series/${currentSeries.slug}/`}>{currentSeries.title} <span aria-hidden="true">/</span> Part {data.part} of {currentSeries.totalParts}</a>}
+      <h1>{data.title}</h1>
+      <div class="article-byline">
+        <span>{site.author}</span><span aria-hidden="true">·</span>
+        <time datetime={data.pubDate}>{formatDate(data.pubDate)}</time>
+        {data.topic && <span class="article-topic">{data.topic}</span>}
+      </div>
+    </header>
+    <figure class="article-cover">
+      <a href={data.heroImage.replace(/\.png$/, '.svg')} title="Open the full-size cover diagram">
+        <img src={data.heroImage} alt={data.heroAlt} width="2160" height="1230" fetchpriority="high" />
+      </a>
+      <figcaption>Open any diagram to view it at full size.</figcaption>
+    </figure>
+    <div class="article-grid">
+      <div class="article-prose"><slot /></div>
+      <aside class="article-aside">
+        <nav aria-label="On this page" class="table-of-contents">
+          <p class="eyebrow">On this page</p>
+          <ol>{contents.map((heading) => <li><a href={`#${heading.slug}`}>{heading.text}</a></li>)}</ol>
+          {currentSeries && <a class="series-return" href={`/series/${currentSeries.slug}/`}>Explore the series <span aria-hidden="true">→</span></a>}
+        </nav>
+      </aside>
+    </div>
+    <footer class="article-end">
+      {currentSeries && <p class="eyebrow">{currentSeries.title}</p>}
+      {nextArticle ? <>
+        <h2>Next: <a href={`/writing/${nextArticle.id}/`}>{nextArticle.data.title}</a></h2>
+        <p>{nextArticle.data.description}</p>
+      </> : nextPlanned ? <>
+        <h2>Next: {nextPlanned.title}</h2>
+        <p>{nextPlanned.description} This part is planned.</p>
+      </> : <h2>Keep reading</h2>}
+      {currentSeries && <a class="text-link" href={`/series/${currentSeries.slug}/`}>View the series <span aria-hidden="true">→</span></a>}
+      <a class="text-link" href="/rss.xml">Follow new posts with RSS <span aria-hidden="true">↗</span></a>
+    </footer>
+  </article>
+</BaseLayout>

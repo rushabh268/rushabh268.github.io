@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { series, getSeriesProgress } from '../../data/series';
+import { getPublishedWriting } from '../../data/writing';
+
+const publishedWriting = await getPublishedWriting();
+const seriesWithProgress = series.map((item) => ({ ...item, ...getSeriesProgress(item, publishedWriting) }));
+---
+
+<BaseLayout title="Series" description="Read Rushabh Sanghvi’s connected essays in order: Inside an Agent Harness and the earlier Claude for Cloud Security series.">
+  <div class="shell page-width">
+    <header class="page-header">
+      <p class="eyebrow">One idea, a few essays</p>
+      <h1>Series</h1>
+      <p>Some subjects need more than one post. These collections follow the idea from context to implementation.</p>
+    </header>
+    <div class="series-grid series-index">
+      {seriesWithProgress.map((item, index) => <article class="series-card">
+        <span class="series-number" aria-hidden="true">0{index + 1}</span>
+        <p class="eyebrow">{item.totalParts} parts <span aria-hidden="true">/</span> {item.status}</p>
+        <h2><a href={`/series/${item.slug}/`}>{item.title} <span aria-hidden="true">→</span></a></h2>
+        <p>{item.description}</p>
+        <p class="series-progress">{item.publishedCount} published{item.planned.length > 0 && ` · ${item.planned.length} planned`}</p>
+      </article>)}
+    </div>
+  </div>
+</BaseLayout>

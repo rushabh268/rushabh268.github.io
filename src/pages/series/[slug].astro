@@ -1,0 +1,46 @@
+---
+import type { InferGetStaticPropsType } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { series, getSeriesProgress } from '../../data/series';
+import { getPublishedWriting } from '../../data/writing';
+import { formatDate } from '../../data/site';
+
+export function getStaticPaths() {
+  return series.map((item) => ({ params: { slug: item.slug }, props: { item } }));
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { item } = Astro.props;
+const { published, planned, status } = getSeriesProgress(item, await getPublishedWriting());
+---
+
+<BaseLayout title={item.title} description={item.description}>
+  <div class="shell page-width">
+    <header class="page-header">
+      <a class="back-link" href="/series/"><span aria-hidden="true">←</span> All series</a>
+      <p class="eyebrow">{item.totalParts} parts <span aria-hidden="true">/</span> {status}</p>
+      <h1>{item.title}</h1>
+      <p>{item.description}</p>
+    </header>
+    <ol class="series-parts">
+      {published.map((post) => <li class="series-part">
+        <span class="part-number" aria-hidden="true">0{post.part}</span>
+        <div>
+          <p class="eyebrow">Part {post.part} <span aria-hidden="true">/</span> {post.external ? 'On Medium ↗' : 'Published here'}</p>
+          <h2><a href={post.href}>{post.title}{post.external && <span aria-hidden="true"> ↗</span>}</a></h2>
+          <p>{post.description}</p>
+          <time datetime={post.pubDate}>{formatDate(post.pubDate)}</time>
+        </div>
+      </li>)}
+      {planned.map((part) => <li class="series-part series-part-planned">
+        <span class="part-number" aria-hidden="true">0{part.part}</span>
+        <div>
+          <p class="eyebrow">Part {part.part} <span aria-hidden="true">/</span> {part.topic} <span class="planned-label">Planned</span></p>
+          <h2>{part.title}</h2>
+          <p>{part.description}</p>
+        </div>
+      </li>)}
+    </ol>
+    <aside class="quiet-note">New posts appear in the <a href="/rss.xml">RSS feed</a> when they are published.</aside>
+  </div>
+</BaseLayout>

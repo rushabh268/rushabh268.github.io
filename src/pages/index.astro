@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import WritingCard from '../components/WritingCard.astro';
+import { getPublishedWriting } from '../data/writing';
+import { externalWriting } from '../data/external-writing';
+import { series, getSeriesProgress } from '../data/series';
+import { formatDate } from '../data/site';
+
+const publishedWriting = await getPublishedWriting();
+const [latest] = publishedWriting;
+const seriesWithProgress = series.map((item) => ({ ...item, ...getSeriesProgress(item, publishedWriting) }));
+const latestSeries = latest && series.find((item) => item.slug === latest.data.series);
+const earlier = [...externalWriting].sort((a, b) => b.pubDate.localeCompare(a.pubDate));
+---
+
+<BaseLayout>
+  <div class="shell">
+    <section class="home-intro">
+      <p class="eyebrow">Cloud systems · AI coding tools · Practical engineering</p>
+      <h1>Engineering, <em>in practice.</em></h1>
+      <p class="intro-copy">I write about backend systems, cloud infrastructure, and the coding tools I use along the way.</p>
+    </section>
+
+    {latest && <section class="featured-article" aria-labelledby="featured-title">
+      <a class="featured-image" href={`/writing/${latest.id}/`} aria-label={`Read ${latest.data.title}`}>
+        <img src={latest.data.heroImage} alt={latest.data.heroAlt} width="2160" height="1230" fetchpriority="high" />
+      </a>
+      <div class="featured-copy">
+        <p class="eyebrow">Latest essay</p>
+        {latestSeries && <p class="series-label">{latestSeries.title} / Part {latest.data.part}</p>}
+        <h2 id="featured-title"><a href={`/writing/${latest.id}/`}>{latest.data.title}</a></h2>
+        <p>{latest.data.description}</p>
+        <div class="featured-bottom">
+          <a class="text-link" href={`/writing/${latest.id}/`}>Read the essay <span aria-hidden="true">→</span></a>
+          <time datetime={latest.data.pubDate}>{formatDate(latest.data.pubDate)}</time>
+        </div>
+      </div>
+    </section>}
+
+    <section class="page-section" aria-labelledby="earlier-writing">
+      <div class="section-heading">
+        <div><p class="eyebrow">From the archive</p><h2 id="earlier-writing">Earlier writing</h2></div>
+        <a class="text-link" href="/writing/">All writing <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="writing-list">
+        {earlier.map((post) => <WritingCard title={post.title} description={post.description} date={post.pubDate} href={post.url} label={`Part ${post.part} of 4`} external />)}
+      </div>
+    </section>
+
+    <section class="page-section" aria-labelledby="series-heading">
+      <div class="section-heading">
+        <div><p class="eyebrow">Follow an idea</p><h2 id="series-heading">Read a series</h2></div>
+        <a class="text-link" href="/series/">All series <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="series-grid">
+        {seriesWithProgress.map((item) => <article class="series-card">
+          <p class="eyebrow">{item.totalParts} parts <span aria-hidden="true">/</span> {item.status}</p>
+          <h3><a href={`/series/${item.slug}/`}>{item.title} <span aria-hidden="true">→</span></a></h3>
+          <p>{item.description}</p>
+        </article>)}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

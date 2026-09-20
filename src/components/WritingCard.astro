@@ -1,0 +1,26 @@
+---
+import { formatDate } from '../data/site';
+
+interface Props {
+  title: string;
+  description: string;
+  date: string;
+  href: string;
+  label?: string;
+  external?: boolean;
+}
+
+const { title, description, date, href, label, external = false } = Astro.props;
+---
+
+<article class="writing-card">
+  <div class="writing-card-meta">
+    <time datetime={date}>{formatDate(date)}</time>
+    {label && <span>{label}</span>}
+    {external && <span class="external-label">On Medium <span aria-hidden="true">↗</span></span>}
+  </div>
+  <div class="writing-card-copy">
+    <h2><a href={href}>{title}{external && <span class="link-arrow" aria-hidden="true"> ↗</span>}</a></h2>
+    <p>{description}</p>
+  </div>
+</article>

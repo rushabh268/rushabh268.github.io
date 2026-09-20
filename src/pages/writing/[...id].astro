@@ -1,0 +1,18 @@
+---
+import { render } from 'astro:content';
+import type { InferGetStaticPropsType } from 'astro';
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getPublishedWriting } from '../../data/writing';
+
+export async function getStaticPaths() {
+  return (await getPublishedWriting()).map((entry) => ({
+    params: { id: entry.id }, props: { entry },
+  }));
+}
+
+type Props = InferGetStaticPropsType<typeof getStaticPaths>;
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+---
+
+<ArticleLayout entry={entry} headings={headings}><Content /></ArticleLayout>

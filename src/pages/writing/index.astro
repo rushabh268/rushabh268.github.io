@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import WritingCard from '../../components/WritingCard.astro';
+import { getPublishedWriting } from '../../data/writing';
+import { externalWriting } from '../../data/external-writing';
+import { series } from '../../data/series';
+
+const posts = await getPublishedWriting();
+const earlier = [...externalWriting].sort((a, b) => b.pubDate.localeCompare(a.pubDate));
+---
+
+<BaseLayout title="Writing" description="Essays by Rushabh Sanghvi on cloud systems, AI coding tools, and practical engineering. New articles here, with earlier writing on Medium.">
+  <div class="shell page-width">
+    <header class="page-header">
+      <p class="eyebrow">The archive</p>
+      <h1>Writing</h1>
+      <p>Longer explanations, practical examples, and things learned while building. New posts live here; the earlier series is on Medium.</p>
+    </header>
+    <section class="archive-section" aria-labelledby="native-writing">
+      <h2 class="eyebrow" id="native-writing">On this site</h2>
+      <div class="writing-list">
+        {posts.map((post) => <WritingCard title={post.data.title} description={post.data.description} date={post.data.pubDate} href={`/writing/${post.id}/`} label={`${series.find((item) => item.slug === post.data.series)?.title ?? 'Essay'} · Part ${post.data.part}`} />)}
+      </div>
+    </section>
+    <section class="archive-section" aria-labelledby="medium-writing">
+      <h2 class="eyebrow" id="medium-writing">Earlier, on Medium</h2>
+      <div class="writing-list">
+        {earlier.map((post) => <WritingCard title={post.title} description={post.description} date={post.pubDate} href={post.url} label={`Claude for Cloud Security · Part ${post.part}`} external />)}
+      </div>
+    </section>
+    <aside class="quiet-note">Follow new essays with <a href="/rss.xml">RSS</a>, or browse them in <a href="/series/">series order</a>.</aside>
+  </div>
+</BaseLayout>

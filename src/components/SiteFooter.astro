@@ -1,0 +1,15 @@
+---
+import { site } from '../data/site';
+---
+
+<footer class="site-footer shell">
+  <div>
+    <a class="footer-name" href="/">{site.author}</a>
+    <p>Notes on systems, tools, and the work of engineering.</p>
+  </div>
+  <nav aria-label="Elsewhere">
+    <a href="/rss.xml">RSS</a>
+    <a href={site.github}>GitHub <span aria-hidden="true">↗</span></a>
+    <a href={site.medium}>Medium <span aria-hidden="true">↗</span></a>
+  </nav>
+</footer>
