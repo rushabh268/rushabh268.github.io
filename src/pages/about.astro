@@ -3,22 +3,27 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { site } from '../data/site';
 ---
 
-<BaseLayout title="About" description="Rushabh Sanghvi writes about backend and cloud systems, AI coding tools, and practical engineering. About this personal notebook and where to find his work.">
+<BaseLayout title="About" description="Rushabh Sanghvi is an architect at Illumio working on Zero Trust segmentation for public cloud. He writes about backend systems and AI coding tools.">
   <div class="shell page-width">
     <header class="page-header">
-      <p class="eyebrow">A little context</p>
+      <p class="eyebrow">About me</p>
       <h1>Hi, I’m Rushabh.</h1>
-      <p>I work with backend and cloud systems, and write about practical engineering and AI coding tools.</p>
     </header>
-    <div class="about-copy">
-      <p>This is a home for the longer explanation: what a tool actually does, where an approach fits, and what I learned while trying it.</p>
-      <p>I use concrete examples and diagrams to make the context easier to follow. When I describe a project, I try to keep its intended design separate from what I have actually tested.</p>
-      <p>My earlier <a href="/series/claude-for-cloud-security/">Claude for Cloud Security</a> series lives on Medium. New writing starts here with <a href="/series/inside-an-agent-harness/">Inside Compass</a>, a series about a companion that works alongside a coding tool’s existing runtime.</p>
-      <div class="about-elsewhere">
-        <h2>Elsewhere</h2>
-        <a class="text-link" href={site.github}>GitHub <span aria-hidden="true">↗</span></a>
-        <a class="text-link" href={site.medium}>Medium <span aria-hidden="true">↗</span></a>
-        <a class="text-link" href="/rss.xml">RSS feed <span aria-hidden="true">→</span></a>
+    <div class="about-profile">
+      <img class="author-portrait" src={site.portrait} alt={`Portrait of ${site.author}`} width="460" height="460" decoding="async" />
+      <div class="about-copy">
+        <p>I’m an architect at Illumio, working on Zero Trust segmentation for public cloud. Most of my work is in Go: distributed backend services and high-throughput pipelines that pull inventory and network-flow data out of AWS, Azure, GCP and OCI. Underneath those systems sit Postgres, Neo4j and Kusto. I’ve been there about eight years.</p>
+        <p>I’ve spent most of that time on CloudSecure. In 2019, I wrote the first prototype on my own to see whether the idea held up. It’s now a product with an engineering organization around it and customers depending on it across several regions. Going from “does this even work” to “this cannot go down” teaches you things about systems design that reading doesn’t — mostly about the problems you don’t get to choose.</p>
+        <p>Before Illumio I was at Nuage Networks (Nokia) on SDN: VMware integrations, Kubernetes CNI plugins, a NetworkPolicy controller. Before that, a master’s in computer networking at NC State. Some of that segmentation work ended up in patents, which mainly taught me to write an idea down precisely before I fully understand it.</p>
+        <p>Lately I’ve been building with agentic coding tools — Claude Code, MCP servers, multi-model orchestration — and writing about what actually works versus what demos well.</p>
+        <p>This site is where I put the longer explanation: what a tool does, where an approach fits, and what I learned trying it. I use concrete examples and diagrams because context is usually the part that gets dropped. When I describe a project, I keep its intended design separate from what I’ve actually tested — those are different claims, and it matters which one you’re reading. My earlier <a href="/series/claude-for-cloud-security/">Claude for Cloud Security</a> series lives on Medium; new writing starts here with <a href="/series/inside-an-agent-harness/">Inside Compass</a>.</p>
+        <p>Outside of work: cricket, and a long-running interest in Sanskrit and Indian mythology that has nothing to do with any of the above and is better for it.</p>
+        <div class="about-elsewhere">
+          <h2>Find my work</h2>
+          <a class="text-link" href={site.github}>GitHub <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href={site.medium}>Medium <span aria-hidden="true">↗</span></a>
+          <a class="text-link" href="/rss.xml">RSS feed <span aria-hidden="true">→</span></a>
+        </div>
       </div>
     </div>
   </div>

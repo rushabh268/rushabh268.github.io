@@ -174,6 +174,32 @@ test('Compass branding preserves the public article URL and original artwork lin
   }
 });
 
+test('the homepage introduces the author and connects to a complete local profile', async () => {
+  const home = (await page('/')).document;
+  const section = tag(home, 'section').find((node) => tag(node, 'h2').some((heading) => normalizedText(heading) === 'About me'));
+  assert.ok(section, 'The homepage has an About me section');
+  const heading = tag(section, 'h2')[0];
+  assert.equal(attr(section, 'aria-labelledby'), attr(heading, 'id'));
+  assert.ok(tag(section, 'a').some((link) => attr(link, 'href') === '/about/'));
+  const about = tag((await page('/about/')).document, 'main')[0];
+  for (const authorContent of [section, about]) {
+    assert.equal(tag(authorContent, 'pre').length, 0, 'Author prose must not contain pasted Markdown fences');
+    assert.ok(!tag(authorContent, 'p').some((paragraph) => /^markdown$/i.test(normalizedText(paragraph))), 'Editorial format labels are not public prose');
+  }
+  const portraits = [section, about].map((node) => tag(node, 'img').find((image) => attr(image, 'alt')?.includes('Rushabh Sanghvi')));
+  for (const portrait of portraits) {
+    assert.ok(portrait, 'Author portrait has descriptive alternative text');
+    assert.equal(attr(portrait, 'src'), '/images/rushabh-sanghvi.jpg');
+    assert.equal(attr(portrait, 'width'), '460');
+    assert.equal(attr(portrait, 'height'), '460');
+  }
+  assert.ok((await stat(path.join(dist, 'images/rushabh-sanghvi.jpg'))).size > 0);
+  const profileLinks = tag(about, 'a').map((link) => attr(link, 'href'));
+  for (const href of ['/series/inside-an-agent-harness/', '/series/claude-for-cloud-security/', 'https://github.com/rushabh268', 'https://medium.com/@rushabh268', '/rss.xml']) {
+    assert.ok(profileLinks.includes(href), `Profile connects to ${href}`);
+  }
+});
+
 test('all internal links, images, stylesheets, and fragment targets resolve in the build', async () => {
   for (const route of routes) {
     const { document } = await page(route);

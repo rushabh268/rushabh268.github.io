@@ -4,7 +4,7 @@ import WritingCard from '../components/WritingCard.astro';
 import { getPublishedWriting } from '../data/writing';
 import { externalWriting } from '../data/external-writing';
 import { series, getSeriesProgress } from '../data/series';
-import { formatDate } from '../data/site';
+import { site, formatDate } from '../data/site';
 
 const publishedWriting = await getPublishedWriting();
 const [latest] = publishedWriting;
@@ -58,6 +58,15 @@ const earlier = [...externalWriting].sort((a, b) => b.pubDate.localeCompare(a.pu
           <h3><a href={`/series/${item.slug}/`}>{item.title} <span aria-hidden="true">→</span></a></h3>
           <p>{item.description}</p>
         </article>)}
+      </div>
+    </section>
+    <section class="page-section home-about" aria-labelledby="about-heading">
+      <img class="author-portrait" src={site.portrait} alt={`Portrait of ${site.author}`} width="460" height="460" loading="lazy" decoding="async" />
+      <div>
+        <p class="eyebrow">{site.author}</p>
+        <h2 id="about-heading">About me</h2>
+        <p>{site.bio}</p>
+        <a class="text-link" href="/about/">More about me <span aria-hidden="true">→</span></a>
       </div>
     </section>
   </div>
