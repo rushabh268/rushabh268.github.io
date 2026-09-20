@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cp, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, readdir, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -12,8 +12,29 @@ const root = path.resolve(import.meta.dirname, '..');
 const dist = path.join(root, 'dist');
 const origin = 'https://rushabh268.github.io';
 const articlePath = '/writing/agent-harnesses-context-in-evidence-out/';
+const publishedArticles = (await Promise.all((await filesBelow(path.join(root, 'src/content/writing')))
+  .filter((file) => file.endsWith('.md')).map(async (file) => {
+    const source = await readFile(file, 'utf8');
+    const metadata = source.match(/^---\n([\s\S]*?)\n---\n/)?.[1];
+    assert.ok(metadata, `Missing frontmatter: ${file}`);
+    // The checked-in article template uses one scalar per line. Read source independently of Astro's publication helper.
+    const field = (key) => {
+      const value = metadata.match(new RegExp(`^${key}:\\s*(.*?)\\s*$`, 'm'))?.[1];
+      if (value?.startsWith('"')) return JSON.parse(value);
+      if (value?.startsWith("'")) return value.slice(1, -1).replaceAll("''", "'");
+      return value;
+    };
+    const id = path.relative(path.join(root, 'src/content/writing'), file).replace(/\.md$/, '');
+    return { route: `/writing/${id}/`, title: field('title'), pubDate: field('pubDate'),
+      series: field('series'), part: Number(field('part')), draft: field('draft') === 'true' };
+  }))).filter((article) => !article.draft);
+const compassArticles = publishedArticles.filter((article) => article.series === 'inside-an-agent-harness');
+const plannedParts = [
+  { part: 2, title: 'Compass — The gaps between sessions' },
+  { part: 3, title: 'Compass — From hooks to a shared ledger' },
+].filter((part) => !compassArticles.some((article) => article.part === part.part));
 const routes = [
-  '/', '/writing/', articlePath, '/series/',
+  '/', '/writing/', ...publishedArticles.map((article) => article.route), '/series/',
   '/series/inside-an-agent-harness/', '/series/claude-for-cloud-security/',
   '/projects/', '/about/', '/404.html',
 ];
@@ -98,9 +119,9 @@ test('the migrated Markdown preserves the pinned article body exactly', async ()
   const markdown = await readFile(path.join(root, 'src/content/writing/agent-harnesses-context-in-evidence-out.md'), 'utf8');
   const body = markdown.replace(/^---\n[\s\S]*?\n---\n/, '')
     .replace(/\[(!\[[^\]]*\]\([^)]*\))\]\([^)]*\)/g, '$1')
-    .replaceAll('/images/agent-harnesses/part-1/', 'assets/')
+    .replaceAll('/images/compass/part-1/', 'assets/')
     .trimEnd() + '\n';
-  assert.equal(createHash('sha256').update(body).digest('hex'), 'e70298a7c81a260b86b9b708e5df326f078af608c4051a8aedb2876b5483a684');
+  assert.equal(createHash('sha256').update(body).digest('hex'), '1ba6689e85e2637c1f79cdc0aed2ccc2c809643c5493b0e2ef5cf3976359d9ce');
 });
 
 test('the rendered article contains its quotes, capability limits, sources, and complete artwork', async () => {
@@ -117,9 +138,6 @@ test('the rendered article contains its quotes, capability limits, sources, and 
   assert.ok(!prose.includes('OpenCode-only'));
   assert.ok(!prose.includes('live Codex model session'));
   assert.ok(prose.includes('not what the model understood.'));
-  assert.ok(!prose.includes('OpenCode-only'));
-  assert.ok(!prose.includes('live Codex model session'));
-  assert.ok(prose.includes('not what the model understood.'));
   assert.ok(prose.includes('selects files changed in the latest commit, then reads selected comments from their current working-tree contents.'));
   assert.ok(prose.includes('its credential scanner records observations; it does not block agent actions.'));
   assert.ok(prose.includes('not an immutable record protected from every process running as the same user.'));
@@ -133,10 +151,27 @@ test('the rendered article contains its quotes, capability limits, sources, and 
   ]) assert.ok(tag(content, 'a').some((node) => attr(node, 'href') === url));
   for (const image of tag(document, 'img')) {
     assert.equal(image.parentNode.tagName, 'a', 'Each diagram links to its full-size version');
-    assert.match(attr(image.parentNode, 'href'), /\/images\/agent-harnesses\/part-1\/.+\.svg$/);
+    assert.match(attr(image.parentNode, 'href'), /\/images\/compass\/part-1\/.+\.svg$/);
   }
   const dates = tag(document, 'time').filter((node) => attr(node, 'datetime') === '2026-09-19');
   assert.ok(dates.some((node) => normalizedText(node) === 'September 19, 2026'));
+});
+
+test('Compass branding preserves the public article URL and original artwork links', async () => {
+  const project = (await page('/projects/')).document;
+  assert.ok(tag(project, 'a').some((link) => attr(link, 'href') === 'https://github.com/rushabh268/compass'));
+  assert.ok(!tag(project, 'a').some((link) => attr(link, 'href') === 'https://github.com/rushabh268/agent-harness'));
+  const article = (await page(articlePath)).document;
+  assert.equal(normalizedText(tag(article, 'h1')[0]), 'Compass — Context in, evidence out');
+  assert.ok(normalizedText(article).includes('Inside Compass'));
+  for (const stem of ['cover', '01-companion-boundary', '02-context-and-evidence', '03-tool-independent-core', '04-grounding-workflow']) {
+    for (const extension of ['svg', 'png']) {
+      const name = `${stem}.${extension}`;
+      const current = await readFile(path.join(dist, 'images/compass/part-1', name));
+      const legacy = await readFile(path.join(dist, 'images/agent-harnesses/part-1', name));
+      assert.deepEqual(legacy, current, `${name}: the original image URL must serve updated artwork`);
+    }
+  }
 });
 
 test('all internal links, images, stylesheets, and fragment targets resolve in the build', async () => {
@@ -159,29 +194,33 @@ test('all internal links, images, stylesheets, and fragment targets resolve in t
   }
 });
 
-test('RSS publishes the native article once and excludes planned and external posts', async () => {
+test('RSS publishes each public native article once and excludes drafts, outlines, and external posts', async () => {
   const xml = await readFile(path.join(dist, 'rss.xml'), 'utf8');
-  assert.equal((xml.match(/<item>/g) ?? []).length, 1);
-  assert.ok(xml.includes(`${origin}${articlePath}`));
-  assert.ok(xml.includes('19 Sep 2026'));
-  assert.ok(xml.includes('Agent Harnesses'));
+  const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((match) => match[1]);
+  const links = items.map((item) => item.match(/<link>([^<]+)<\/link>/)?.[1]);
+  assert.deepEqual(links.sort(), publishedArticles.map((article) => `${origin}${article.route}`).sort());
   assert.ok(!xml.includes('<link>https://medium.com/'));
-  assert.ok(!xml.includes('The gaps between sessions'));
-  assert.ok(!xml.includes('From hooks to a shared ledger'));
+  assert.ok(xml.includes('Compass'));
+  for (const part of plannedParts) assert.ok(!xml.includes(part.title));
 });
 
-test('the series shows two planned parts without publishing fake destinations', async () => {
+test('series progress follows published content and outlines have no fake destinations', async () => {
   const { document } = await page('/series/inside-an-agent-harness/');
-  const pageText = normalizedText(document);
-  assert.ok(pageText.includes('The gaps between sessions'));
-  assert.ok(pageText.includes('From hooks to a shared ledger'));
-  assert.equal((pageText.match(/Planned/g) ?? []).length, 2);
-  const links = tag(document, 'a').map((node) => attr(node, 'href'));
-  assert.ok(links.includes(articlePath));
-  assert.ok(!links.some((link) => link.includes('gaps-between-sessions') || link.includes('from-hooks-to-a-shared-ledger')));
+  const planned = nodes(document, (node) => attr(node, 'class')?.split(' ').includes('series-part-planned'));
+  assert.equal(planned.length, plannedParts.length);
+  for (const part of plannedParts) {
+    const item = planned.find((node) => normalizedText(node).includes(part.title));
+    assert.ok(item, part.title);
+    assert.equal(tag(item, 'a').length, 0, part.title);
+  }
+  const actual = nodes(document, (node) => attr(node, 'class') === 'series-part')
+    .flatMap((node) => tag(node, 'a').map((link) => attr(link, 'href')));
+  assert.deepEqual(actual.sort(), compassArticles.map((article) => article.route).sort());
   const seriesIndex = (await page('/series/')).document;
   const progress = nodes(seriesIndex, (node) => attr(node, 'class') === 'series-progress').map(normalizedText);
-  assert.deepEqual(progress, ['1 published · 2 planned', '4 published']);
+  assert.deepEqual(progress, [
+    `${compassArticles.length} published${plannedParts.length ? ` · ${plannedParts.length} planned` : ''}`, '4 published',
+  ]);
 });
 
 test('the four previous posts retain their exact external Medium destinations', async () => {
@@ -246,7 +285,7 @@ test('the deployment artifact excludes private research, local paths, and releas
   }
 });
 
-test('published parts update homepage and series progress while drafts stay private', { timeout: 60_000 }, async (t) => {
+test('published parts update homepage and series progress while drafts stay out of the published site', { timeout: 60_000 }, async (t) => {
   const fixture = await mkdtemp(path.join(tmpdir(), 'engineering-notes-test-'));
   try {
     for (const name of ['src', 'public', 'astro.config.mjs', 'tsconfig.json', 'package.json']) {
@@ -254,13 +293,15 @@ test('published parts update homepage and series progress while drafts stay priv
     }
     await symlink(path.join(root, 'node_modules'), path.join(fixture, 'node_modules'), 'dir');
     const original = await readFile(path.join(root, 'src/content/writing/agent-harnesses-context-in-evidence-out.md'), 'utf8');
+    await rm(path.join(fixture, 'src/content/writing'), { recursive: true });
+    await mkdir(path.join(fixture, 'src/content/writing'), { recursive: true });
+    await writeFile(path.join(fixture, 'src/content/writing/agent-harnesses-context-in-evidence-out.md'), original);
     const frontmatter = original.match(/^---\n[\s\S]*?\n---\n/)[0];
     const nextPart = frontmatter
-      .replace(/^title: .+$/m, 'title: "Agent Harnesses — The gaps between sessions"')
+      .replace(/^title: .+$/m, 'title: "Compass — The gaps between sessions"')
       .replace(/^pubDate: .+$/m, 'pubDate: "2026-10-20"')
       .replace(/^part: .+$/m, 'part: 2')
       .replace(/^topic: .+$/m, 'topic: "Why I built it"');
-    await writeFile(path.join(fixture, 'src/content/writing/new-part-fixture.md'), `${nextPart}\nTemporary published article for a build regression check.\n`);
     const draft = frontmatter
       .replace(/^title: .+$/m, 'title: "Unpublished draft regression fixture"')
       .replace(/^pubDate: .+$/m, 'pubDate: "2099-10-20"')
@@ -274,10 +315,15 @@ test('published parts update homepage and series progress while drafts stay priv
       maxBuffer: 4 * 1024 * 1024,
     });
     await buildFixture();
+    const before = parse(await readFile(path.join(fixture, 'dist/series/inside-an-agent-harness/index.html'), 'utf8'));
+    assert.equal(nodes(before, (node) => attr(node, 'class')?.includes('series-part-planned')).length, 2);
+    assert.ok(!await stat(path.join(fixture, 'dist/writing/new-part-fixture/index.html')).catch(() => null));
+    await writeFile(path.join(fixture, 'src/content/writing/new-part-fixture.md'), `${nextPart}\nTemporary published article for a build regression check.\n`);
+    await buildFixture();
     const homepage = parse(await readFile(path.join(fixture, 'dist/index.html'), 'utf8'));
     const feature = nodes(homepage, (node) => attr(node, 'class') === 'featured-copy')[0];
     const featureText = normalizedText(feature);
-    assert.ok(featureText.includes('Inside an Agent Harness / Part 2'), featureText);
+    assert.ok(featureText.includes('Inside Compass / Part 2'), featureText);
     assert.ok(featureText.includes('October 20, 2026'), featureText);
     assert.ok(!featureText.includes('Part 1') && !featureText.includes('September 2026'), featureText);
     const nextPage = parse(await readFile(path.join(fixture, 'dist/writing/new-part-fixture/index.html'), 'utf8'));
@@ -285,13 +331,13 @@ test('published parts update homepage and series progress while drafts stay priv
     assert.ok(normalizedText(byline).includes('Why I built it'));
     const nextFooter = nodes(nextPage, (node) => attr(node, 'class') === 'article-end')[0];
     assert.ok(normalizedText(nextFooter).includes('From hooks to a shared ledger'));
-    const generated = await filesBelow(path.join(fixture, 'dist'));
-    assert.ok(!generated.some((file) => file.includes('private-draft-fixture')));
-    for (const name of ['index.html', 'writing/index.html', 'rss.xml', 'sitemap-0.xml']) {
-      const content = await readFile(path.join(fixture, 'dist', name), 'utf8');
-      assert.ok(!content.includes('Unpublished draft regression fixture'), name);
-    }
     const assertSeriesProgress = async (publishedCount, plannedParts, status) => {
+      const generated = await filesBelow(path.join(fixture, 'dist'));
+      assert.ok(!generated.some((file) => file.includes('private-draft-fixture')));
+      for (const name of generated.filter((file) => /\.(html|xml|txt|svg|css)$/.test(file))) {
+        const content = await readFile(name, 'utf8');
+        for (const forbidden of ['Unpublished draft regression fixture', 'This draft must not be published.', 'private-draft-fixture']) assert.ok(!content.includes(forbidden), name);
+      }
       const documents = await Promise.all(['index.html', 'series/index.html', 'series/inside-an-agent-harness/index.html']
         .map(async (name) => parse(await readFile(path.join(fixture, 'dist', name), 'utf8'))));
       const cards = documents.slice(0, 2).map((document) => nodes(document, (node) =>
@@ -312,6 +358,18 @@ test('published parts update homepage and series progress while drafts stay priv
         progress: `${publishedCount} published${plannedParts.length ? ` · ${plannedParts.length} planned` : ''}`,
         statuses: Array(3).fill(`3 parts / ${status}`),
       });
+      const expectedRoutes = [articlePath, '/writing/new-part-fixture/', ...(publishedCount === 3 ? ['/writing/final-part-fixture/'] : [])];
+      const rss = await readFile(path.join(fixture, 'dist/rss.xml'), 'utf8');
+      const rssLinks = [...rss.matchAll(/<item>[\s\S]*?<link>([^<]+)<\/link>/g)].map((match) => match[1]);
+      assert.deepEqual(rssLinks.sort(), expectedRoutes.map((route) => origin + route).sort());
+      const sitemap = await readFile(path.join(fixture, 'dist/sitemap-0.xml'), 'utf8');
+      const articleLinks = [...sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)].map((match) => match[1]).filter((url) => /\/writing\/.+\/$/.test(url));
+      assert.deepEqual(articleLinks.sort(), expectedRoutes.map((route) => origin + route).sort());
+      for (let index = 0; index < expectedRoutes.length - 1; index++) {
+        const sourcePage = parse(await readFile(path.join(fixture, 'dist', expectedRoutes[index], 'index.html'), 'utf8'));
+        const footer = nodes(sourcePage, (node) => attr(node, 'class') === 'article-end')[0];
+        assert.ok(tag(footer, 'a').some((link) => attr(link, 'href') === expectedRoutes[index + 1]));
+      }
       for (const document of documents.slice(0, 2)) {
         const archive = nodes(document, (node) => attr(node, 'class') === 'series-card' &&
           tag(node, 'a').some((link) => attr(link, 'href') === '/series/claude-for-cloud-security/'))[0];
@@ -322,13 +380,28 @@ test('published parts update homepage and series progress while drafts stay priv
       await assertSeriesProgress(2, ['03'], 'In progress');
     });
     const finalPart = nextPart
-      .replace(/^title: .+$/m, 'title: "Agent Harnesses — From hooks to a shared ledger"')
+      .replace(/^title: .+$/m, 'title: "Compass — From hooks to a shared ledger"')
       .replace(/^part: .+$/m, 'part: 3')
       .replace(/^pubDate: .+$/m, 'pubDate: "2026-11-20"');
     await writeFile(path.join(fixture, 'src/content/writing/final-part-fixture.md'), `${finalPart}\nTemporary final article for a build regression check.\n`);
     await buildFixture();
     await t.test('a completed native series is complete without a Medium label', async () => {
       await assertSeriesProgress(3, [], 'Complete');
+    });
+    await rm(path.join(fixture, 'src/content/writing/new-part-fixture.md'));
+    await buildFixture();
+    await t.test('a planned second part stays between published Parts 1 and 3', async () => {
+      const document = parse(await readFile(path.join(fixture, 'dist/series/inside-an-agent-harness/index.html'), 'utf8'));
+      const parts = nodes(document, (node) => attr(node, 'class')?.split(' ').includes('series-part'));
+      assert.deepEqual(parts.map((node) => normalizedText(nodes(node, (child) => attr(child, 'class') === 'part-number')[0])), ['01', '02', '03']);
+      assert.ok(attr(parts[1], 'class').includes('series-part-planned'));
+      assert.ok(normalizedText(parts[1]).includes('Compass — The gaps between sessions'));
+      assert.equal(tag(parts[1], 'a').length, 0);
+      assert.ok(tag(parts[2], 'a').some((link) => attr(link, 'href') === '/writing/final-part-fixture/'));
+      const firstPage = parse(await readFile(path.join(fixture, 'dist', articlePath, 'index.html'), 'utf8'));
+      const footer = nodes(firstPage, (node) => attr(node, 'class') === 'article-end')[0];
+      assert.ok(normalizedText(footer).includes('Next: Compass — The gaps between sessions'));
+      assert.ok(!tag(footer, 'a').some((link) => attr(link, 'href') === '/writing/final-part-fixture/'));
     });
   } finally {
     await rm(fixture, { recursive: true, force: true });

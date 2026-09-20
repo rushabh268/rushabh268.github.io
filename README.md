@@ -27,31 +27,32 @@ npm run preview
 The tests inspect the built pages in `dist`, including internal links, image
 references, metadata, feeds, and the preserved article text.
 
-## Add an article
+## Prepare an article
 
-Create a Markdown file under `src/content/writing`. Its filename becomes the
-article slug. The current content schema is in `src/content.config.ts`.
+Write unpublished prose and create its illustrations outside this public
+repository. A Markdown file marked `draft: true` is excluded from pages and RSS,
+but its text is still visible in public Git history. Files in `public/` are
+always copied into the deployed site, including illustrations for drafts.
 
-```yaml
----
-title: "Article title"
-description: "A short description for readers and search results."
-pubDate: "2026-09-19"
-heroImage: "/images/example/cover.png"
-heroAlt: "A useful description of the illustration."
-series: "inside-an-agent-harness"
-part: 2
-draft: true
----
-```
+Only copy an article and its public illustrations into this repository when
+publication is intended. Its Markdown filename under `src/content/writing`
+becomes the article slug. The schema is in `src/content.config.ts`; use the
+[article template and publication checklist](docs/publishing.md).
 
-Keep the article title in its metadata; the page layout supplies the H1,
-byline, and cover. Put illustrations in `public/images` and use site-relative
-paths. Keep citations and descriptive alt text with the article.
+The current series is **Inside Compass**. Its identifier remains
+`inside-an-agent-harness` to preserve the existing series URL. The original
+Part 1 article URL also remains unchanged. New artwork uses
+`/images/compass/part-1/`; the original image URLs remain compatible copies.
 
 Series details and the external Medium archive are maintained under
-`src/data`. Planned parts have no article page or RSS entry. Set `draft` to
-`false` when the article is ready, and update its series entry.
+`src/data`. Planned parts have no article page or RSS entry. Published articles
+automatically replace their matching planned part in the series; do not delete
+an outline just to publish its article.
+
+`pubDate` is the displayed publication date, not a schedule or a date gate.
+Setting `draft: false` publishes the article on the next deployment even when
+its date is in the future. Parts 2 and 3 remain planned until the author
+explicitly publishes them. There is no automatic publication next week.
 
 ## Publish
 

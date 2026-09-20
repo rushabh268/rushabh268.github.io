@@ -12,6 +12,7 @@ export function getStaticPaths() {
 type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 const { item } = Astro.props;
 const { published, planned, status } = getSeriesProgress(item, await getPublishedWriting());
+const parts = [...published, ...planned].sort((a, b) => a.part - b.part);
 ---
 
 <BaseLayout title={item.title} description={item.description}>
@@ -23,16 +24,15 @@ const { published, planned, status } = getSeriesProgress(item, await getPublishe
       <p>{item.description}</p>
     </header>
     <ol class="series-parts">
-      {published.map((post) => <li class="series-part">
-        <span class="part-number" aria-hidden="true">0{post.part}</span>
+      {parts.map((part) => 'href' in part ? <li class="series-part">
+        <span class="part-number" aria-hidden="true">0{part.part}</span>
         <div>
-          <p class="eyebrow">Part {post.part} <span aria-hidden="true">/</span> {post.external ? 'On Medium ↗' : 'Published here'}</p>
-          <h2><a href={post.href}>{post.title}{post.external && <span aria-hidden="true"> ↗</span>}</a></h2>
-          <p>{post.description}</p>
-          <time datetime={post.pubDate}>{formatDate(post.pubDate)}</time>
+          <p class="eyebrow">Part {part.part} <span aria-hidden="true">/</span> {part.external ? 'On Medium ↗' : 'Published here'}</p>
+          <h2><a href={part.href}>{part.title}{part.external && <span aria-hidden="true"> ↗</span>}</a></h2>
+          <p>{part.description}</p>
+          <time datetime={part.pubDate}>{formatDate(part.pubDate)}</time>
         </div>
-      </li>)}
-      {planned.map((part) => <li class="series-part series-part-planned">
+      </li> : <li class="series-part series-part-planned">
         <span class="part-number" aria-hidden="true">0{part.part}</span>
         <div>
           <p class="eyebrow">Part {part.part} <span aria-hidden="true">/</span> {part.topic} <span class="planned-label">Planned</span></p>

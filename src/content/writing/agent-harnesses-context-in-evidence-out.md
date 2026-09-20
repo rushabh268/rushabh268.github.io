@@ -1,9 +1,9 @@
 ---
-title: "Agent Harnesses — Context in, evidence out"
+title: "Compass — Context in, evidence out"
 description: "What a local companion harness adds to the coding tool’s native runtime: selected project context, a limited audit trail, and a view of observed activity."
 pubDate: "2026-09-19"
-heroImage: "/images/agent-harnesses/part-1/cover.png"
-heroAlt: "Inside an Agent Harness, Part 1 of 3. A companion layer supplies project context and records selected activity alongside Claude Code, Codex, and OpenCode."
+heroImage: "/images/compass/part-1/cover.png"
+heroAlt: "Inside Compass, Part 1 of 3. A companion layer supplies project context and records selected activity alongside Claude Code, Codex, and OpenCode."
 series: "inside-an-agent-harness"
 part: 1
 topic: "What it is"
@@ -13,7 +13,7 @@ It’s been a while since I wrote about [CLAUDE.md](https://medium.com/@rushabh2
 
 This series takes the next step. When several agents are working across sessions, I want a consistent way to supply the context relevant to their work and inspect the activity my tooling can actually observe. I also want that approach to survive a change of coding tool. I might use Claude Code for one task, Codex for another, and OpenCode for a third.
 
-That led me to build a **companion harness**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
+That led me to build **Compass, a companion harness for AI coding tools**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
 
 ## First, the coding tool already has a harness
 
@@ -27,9 +27,9 @@ One place that change shows up is the amount of work happening between a request
 
 That surrounding execution software is the agent harness. Anthropic explicitly describes Claude Code as the harness around Claude: it provides tools, context management, and an execution environment. OpenAI describes the Codex harness as managing conversation state, streamed execution, tools, and configured sandbox and approval policies. These capabilities already belong to the coding tool. [1][2]
 
-This distinction matters. **The harness in this series complements that runtime.** I am using “companion harness” to make the boundary clear.
+This distinction matters. **Compass complements that runtime.** I am using “companion harness” to make the boundary clear.
 
-[![The native coding tool owns the agent loop, tools, sessions, and execution boundaries. The companion layer supplies grounding and receives selected events through Claude Code, Codex, and OpenCode adapters.](/images/agent-harnesses/part-1/01-companion-boundary.png)](/images/agent-harnesses/part-1/01-companion-boundary.svg "Open the full-size diagram")
+[![The native coding tool owns the agent loop, tools, sessions, and execution boundaries. The companion layer supplies grounding and receives selected events through Claude Code, Codex, and OpenCode adapters.](/images/compass/part-1/01-companion-boundary.png)](/images/compass/part-1/01-companion-boundary.svg "Open the full-size diagram")
 
 *Figure 1. The coding tool continues to run the agent. The companion supplies project context and observes activity through each tool’s supported integration points.*
 
@@ -86,7 +86,7 @@ These are deliberately modest answers. An injection count tells me that the inte
 
 The dashboard reads a bounded recent event window, so its counts describe that window. They are not lifetime totals or a measurement of developer productivity.
 
-[![Two separate flows: maintained project sources become a small cited brief for a model request; observed activity becomes selected metadata in a local ledger and dashboard.](/images/agent-harnesses/part-1/02-context-and-evidence.png)](/images/agent-harnesses/part-1/02-context-and-evidence.svg "Open the full-size diagram")
+[![Two separate flows: maintained project sources become a small cited brief for a model request; observed activity becomes selected metadata in a local ledger and dashboard.](/images/compass/part-1/02-context-and-evidence.png)](/images/compass/part-1/02-context-and-evidence.svg "Open the full-size diagram")
 
 *Figure 2. Context enters the model request. Selected observations leave the workflow as audit metadata. The two flows carry different information.*
 
@@ -113,7 +113,7 @@ The common pieces are the project sources, the event contract, the redaction rul
 
 Claude Code hooks and OpenCode plugins provide different interfaces. OpenCode documents plugins that subscribe to events and extend behavior; Codex provides command hooks for documented session, tool, and subagent events. There is no reason to assume that one hook implementation will work unchanged across all three. [2][4][7]
 
-[![A shared companion core is connected to separate tool adapters. Claude Code, Codex, and OpenCode each have a separate adapter for automatic grounding and event collection.](/images/agent-harnesses/part-1/03-tool-independent-core.png)](/images/agent-harnesses/part-1/03-tool-independent-core.svg "Open the full-size diagram")
+[![A shared companion core is connected to separate tool adapters. Claude Code, Codex, and OpenCode each have a separate adapter for automatic grounding and event collection.](/images/compass/part-1/03-tool-independent-core.png)](/images/compass/part-1/03-tool-independent-core.svg "Open the full-size diagram")
 
 *Figure 3. The architecture separates common services from tool-specific integration. Automatic grounding, event collection, and the dashboard work across all three adapters.*
 
@@ -121,7 +121,7 @@ The shared grounding path now serves all three adapters. Each selects from the s
 
 Here is how those pieces fit around a request. Context preparation and audit collection are separate flows: the brief goes to the coding tool, while the ledger receives only selected metadata. The native tool runs the model and its tools. If grounding is disabled, has no matching sources, or fails, that workflow continues without the extra brief.
 
-[![Sequence diagram with seven lifelines: Developer, Native coding tool, Companion adapter, Shared grounding, Project sources, Supervisor and ledger, and Dashboard. Native hooks prepare context on demand; OpenCode prepares it in the background and uses its cache. The brief returns through the host context interface. Only selected metadata reaches the ledger.](/images/agent-harnesses/part-1/04-grounding-workflow.png)](/images/agent-harnesses/part-1/04-grounding-workflow.svg "Open the full-size diagram")
+[![Sequence diagram with seven lifelines: Developer, Native coding tool, Companion adapter, Shared grounding, Project sources, Supervisor and ledger, and Dashboard. Native hooks prepare context on demand; OpenCode prepares it in the background and uses its cache. The brief returns through the host context interface. Only selected metadata reaches the ledger.](/images/compass/part-1/04-grounding-workflow.png)](/images/compass/part-1/04-grounding-workflow.svg "Open the full-size diagram")
 
 *Figure 4. One request, two information flows. The adapter supplies context through the native tool and records observations separately. A grounding-emission count records what the integration supplied, not what the model understood. Open the full-size diagram to follow the calls and returns.*
 

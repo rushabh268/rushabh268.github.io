@@ -28,20 +28,21 @@ export function getSeriesProgress(item: Series, writing: CollectionEntry<'writin
 
 export const series: Series[] = [
   {
+    // Keep the published series URL stable after the Compass rename.
     slug: 'inside-an-agent-harness',
-    title: 'Inside an Agent Harness',
+    title: 'Inside Compass',
     description: 'What a companion harness adds, why I built one, and how it works alongside the coding tools I use.',
     totalParts: 3,
     planned: [
       {
         part: 2,
-        title: 'Agent Harnesses — The gaps between sessions',
+        title: 'Compass — The gaps between sessions',
         topic: 'Why I built it',
         description: 'The context that was getting rebuilt, the visibility I was missing, and the tradeoffs of collecting useful evidence.',
       },
       {
         part: 3,
-        title: 'Agent Harnesses — From hooks to a shared ledger',
+        title: 'Compass — From hooks to a shared ledger',
         topic: 'How it works',
         description: 'The implementation, the integration boundaries, and the things that broke along the way.',
       },
