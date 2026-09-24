@@ -13,7 +13,7 @@ It’s been a while since I wrote about [CLAUDE.md](https://medium.com/@rushabh2
 
 This series takes the next step. When several agents are working across sessions, I want a consistent way to supply the context relevant to their work and inspect the activity my tooling can actually observe. I also want that approach to survive a change of coding tool. I might use Claude Code for one task, Codex for another, and OpenCode for a third.
 
-That led me to build **Compass, a companion harness for AI coding tools**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
+That led me to build **[Compass](https://github.com/rushabh268/compass), a companion harness for AI coding tools**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
 
 ## First, the coding tool already has a harness
 
@@ -80,7 +80,7 @@ The local ledger includes integrity checks intended to detect changes to recorde
 
 ### 3. A view of what the collector sees
 
-The third piece is a small dashboard over that metadata. It shows event counts by platform and type, grounding-injection counts, OpenCode coalescing summaries, and credential-pattern observations.
+The third piece is a small dashboard over that metadata. It shows recorded event counts by platform and type, a combined count of recorded grounding injections from Claude Code, Codex, and OpenCode, and credential-pattern observations. It also counts OpenCode’s coalescing summary events, which come from noisier event streams exposed by its plugin.
 
 These are deliberately modest answers. An injection count tells me that the integration added a grounding brief. It does not tell me that the model used the brief correctly. A tool event tells me that activity was observed. Whether the resulting change works still needs test output, code review, and the appropriate runtime checks.
 

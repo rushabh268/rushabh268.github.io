@@ -121,7 +121,7 @@ test('the migrated Markdown preserves the pinned article body exactly', async ()
     .replace(/\[(!\[[^\]]*\]\([^)]*\))\]\([^)]*\)/g, '$1')
     .replaceAll('/images/compass/part-1/', 'assets/')
     .trimEnd() + '\n';
-  assert.equal(createHash('sha256').update(body).digest('hex'), '1ba6689e85e2637c1f79cdc0aed2ccc2c809643c5493b0e2ef5cf3976359d9ce');
+  assert.equal(createHash('sha256').update(body).digest('hex'), '08d5f2c0dc8b7a6600fa8db438705d74fdde667c2398e68907716e79e9e3c47f');
 });
 
 test('the rendered article contains its quotes, capability limits, sources, and complete artwork', async () => {
@@ -133,6 +133,8 @@ test('the rendered article contains its quotes, capability limits, sources, and 
     'The profession is being dramatically refactored as the bits contributed by the programmer are increasingly sparse and between.',
     'give Claude a way to verify its work.',
     'The shared grounding path now serves all three adapters.',
+    'a combined count of recorded grounding injections from Claude Code, Codex, and OpenCode',
+    'OpenCode’s coalescing summary events',
     'Context preparation and audit collection are separate flows: the brief goes to the coding tool, while the ledger receives only selected metadata.',
   ]) assert.ok(prose.includes(expected), expected);
   assert.ok(!prose.includes('OpenCode-only'));
@@ -145,6 +147,7 @@ test('the rendered article contains its quotes, capability limits, sources, and 
   assert.equal(tag(document, 'img').length, 5, 'The cover appears once, alongside four figures');
   for (const number of [1, 2, 3, 4]) assert.ok(prose.includes(`Figure ${number}.`));
   for (const url of [
+    'https://github.com/rushabh268/compass',
     'https://x.com/karpathy/status/2004607146781278521',
     'https://x.com/bcherny/status/2007179861115511237',
     'https://learn.chatgpt.com/docs/hooks',
