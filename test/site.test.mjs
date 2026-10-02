@@ -121,7 +121,7 @@ test('the migrated Markdown preserves the pinned article body exactly', async ()
     .replace(/\[(!\[[^\]]*\]\([^)]*\))\]\([^)]*\)/g, '$1')
     .replaceAll('/images/compass/part-1/', 'assets/')
     .trimEnd() + '\n';
-  assert.equal(createHash('sha256').update(body).digest('hex'), '08d5f2c0dc8b7a6600fa8db438705d74fdde667c2398e68907716e79e9e3c47f');
+  assert.equal(createHash('sha256').update(body).digest('hex'), 'e2b0ba0bce6fca7d4931983f22de1c51110d4f66564d238e59c1106344b9d762');
 });
 
 test('the rendered article contains its quotes, capability limits, sources, and complete artwork', async () => {

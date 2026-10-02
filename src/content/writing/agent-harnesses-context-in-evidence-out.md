@@ -1,6 +1,6 @@
 ---
 title: "Compass — Context in, evidence out"
-description: "What a local companion harness adds to the coding tool’s native runtime: selected project context, a limited audit trail, and a view of observed activity."
+description: "A brief guide to agent harnesses, then what Compass adds alongside a coding tool: project context, a limited audit trail, and a view of observed activity."
 pubDate: "2026-09-19"
 heroImage: "/images/compass/part-1/cover.png"
 heroAlt: "Inside Compass, Part 1 of 3. A companion layer supplies project context and records selected activity alongside Claude Code, Codex, and OpenCode."
@@ -13,9 +13,7 @@ It’s been a while since I wrote about [CLAUDE.md](https://medium.com/@rushabh2
 
 This series takes the next step. When several agents are working across sessions, I want a consistent way to supply the context relevant to their work and inspect the activity my tooling can actually observe. I also want that approach to survive a change of coding tool. I might use Claude Code for one task, Codex for another, and OpenCode for a third.
 
-That led me to build **[Compass](https://github.com/rushabh268/compass), a companion harness for AI coding tools**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
-
-## First, the coding tool already has a harness
+## First, what is an agent harness?
 
 Andrej Karpathy described the shift in programming this way:
 
@@ -23,11 +21,18 @@ Andrej Karpathy described the shift in programming this way:
 >
 > — [Andrej Karpathy, December 26, 2025](https://x.com/karpathy/status/2004607146781278521)
 
-One place that change shows up is the amount of work happening between a request and a code diff. The agent gathers context, calls tools, reads their results, changes its approach, and decides what to do next. Something has to manage that loop.
+One place that change shows up is the work between a request and a code diff. The model does not read files or run tests on its own. It proposes tool calls. The harness makes those tools available, runs calls under the coding tool’s rules, returns the results, and keeps the conversation going. A request can become a loop: read a file, decide on an edit, apply it, run a test, inspect the failure, try again.
 
-That surrounding execution software is the agent harness. Anthropic explicitly describes Claude Code as the harness around Claude: it provides tools, context management, and an execution environment. OpenAI describes the Codex harness as managing conversation state, streamed execution, tools, and configured sandbox and approval policies. These capabilities already belong to the coding tool. [1][2]
+That surrounding execution software is the agent harness. It also assembles context and manages session state. Anthropic explicitly describes Claude Code as the harness around Claude; OpenAI describes the Codex harness as managing conversation state, streamed execution, tools, sandboxing, and approvals. OpenCode has its own runtime and plugin surface. The details differ, but the coding tool already provides the agent loop. [1][2][4]
 
-This distinction matters. **Compass complements that runtime.** I am using “companion harness” to make the boundary clear.
+If the term still feels abstract, these two videos explain the pieces well:
+
+- [AI Model vs Agentic Harness: What Actually Drives AI](https://www.youtube.com/watch?v=ZELPNFXJ4_o) (IBM Technology, 8½ minutes) separates the model from the tools, memory, and loop around it.
+- [When to Build Your Own Agent Harness](https://www.youtube.com/watch?v=HI2q3ci3Iuc) (Harrison Chase at Sequoia, 24 minutes) goes deeper on when an existing harness is enough and when hooks, middleware, or a custom loop help.
+
+That led me to build **[Compass](https://github.com/rushabh268/compass), a companion harness for AI coding tools**: a local layer that works alongside the harness already provided by the coding tool. In this first post, I will explain what that layer does, where it fits, and what I am deliberately leaving to the underlying tool. Part 2 will cover why I built it. Part 3 will cover the implementation and the things that broke along the way.
+
+The word *companion* describes the boundary: Compass participates through each tool’s supported integration points, while the native runtime continues to run the agent.
 
 [![The native coding tool owns the agent loop, tools, sessions, and execution boundaries. The companion layer supplies grounding and receives selected events through Claude Code, Codex, and OpenCode adapters.](/images/compass/part-1/01-companion-boundary.png)](/images/compass/part-1/01-companion-boundary.svg "Open the full-size diagram")
 
