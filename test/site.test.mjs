@@ -156,8 +156,8 @@ test('the rendered article contains its quotes, capability limits, sources, and 
     assert.equal(image.parentNode.tagName, 'a', 'Each diagram links to its full-size version');
     assert.match(attr(image.parentNode, 'href'), /\/images\/compass\/part-1\/.+\.svg$/);
   }
-  const dates = tag(document, 'time').filter((node) => attr(node, 'datetime') === '2026-09-19');
-  assert.ok(dates.some((node) => normalizedText(node) === 'September 19, 2026'));
+  const dates = tag(document, 'time').filter((node) => attr(node, 'datetime') === '2026-10-09');
+  assert.ok(dates.some((node) => normalizedText(node) === 'October 9, 2026'));
 });
 
 test('Compass branding preserves the public article URL and original artwork links', async () => {
@@ -354,7 +354,7 @@ test('published parts update homepage and series progress while drafts stay out 
     const featureText = normalizedText(feature);
     assert.ok(featureText.includes('Inside Compass / Part 2'), featureText);
     assert.ok(featureText.includes('October 20, 2026'), featureText);
-    assert.ok(!featureText.includes('Part 1') && !featureText.includes('September 2026'), featureText);
+    assert.ok(!featureText.includes('Part 1') && !featureText.includes('October 9, 2026'), featureText);
     const nextPage = parse(await readFile(path.join(fixture, 'dist/writing/new-part-fixture/index.html'), 'utf8'));
     const byline = nodes(nextPage, (node) => attr(node, 'class') === 'article-byline')[0];
     assert.ok(normalizedText(byline).includes('Why I built it'));

@@ -1,7 +1,7 @@
 ---
 title: "Compass — Context in, evidence out"
 description: "A brief guide to agent harnesses, then what Compass adds alongside a coding tool: project context, a limited audit trail, and a view of observed activity."
-pubDate: "2026-09-19"
+pubDate: "2026-10-09"
 heroImage: "/images/compass/part-1/cover.png"
 heroAlt: "Inside Compass, Part 1 of 3. A companion layer supplies project context and records selected activity alongside Claude Code, Codex, and OpenCode."
 series: "inside-an-agent-harness"
